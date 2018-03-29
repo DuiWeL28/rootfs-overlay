@@ -17,6 +17,8 @@ for i in $(cat /proc/cmdline); do
 	[ "$i" = "dotor" ] && /usr/local/lib/heads/heads-net-switch tor
 done
 
+chown -R luther:luther /home/luther
+
 cp /usr/local/share/heads/$wm.xinitrc /home/luther/.xinitrc
 cp /usr/local/share/heads/welcome-$wm.txt /home/luther/Desktop/Welcome.txt
 

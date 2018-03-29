@@ -9,6 +9,9 @@ case "$1" in
 			/home/luther/.config/lxpanel/default/panels/panel
 		ln -snf /usr/share/xul-ext/torbirdy \
 			/usr/lib/thunderbird/extensions/castironthunderbirdclub@torproject.org
+		git checkout -- /home/luther/.electrum/config
+		cp -f /usr/local/share/heads/dirmngr.conf.tor /home/luther/.gnupg/dirmngr.conf
+		git checkout -- /home/luther/.config/hexchat/hexchat.conf
 		;;
 	vpn)
 		/etc/init.d/ferm stop
@@ -17,5 +20,8 @@ case "$1" in
 		sed 's/tbb.desktop/firefox-esr.desktop/' -i \
 			/home/luther/.config/lxpanel/default/panels/panel
 		rm -f /usr/lib/thunderbird/extensions/castironthunderbirdclub@torproject.org
+		rm -f /home/luther/.electrum/config
+		cp -f /usr/local/share/heads/dirmngr.conf.vpn /home/luther/.gnupg/dirmngr.conf
+		rm -f /home/luther/.config/hexchat/hexchat.conf
 		;;
 esac
