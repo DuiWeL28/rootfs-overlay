@@ -14,4 +14,6 @@ dunst &
 udiskie &
 pcmanfm --desktop &
 
+grep -q ' dopia' /proc/cmdline && /opt/pia/run.sh --startup &
+
 exec openbox-session

@@ -1,0 +1,11 @@
+## package repositories
+
+deb tor+http://devuanfwojg73k6r.onion/merged beowulf main
+deb tor+http://devuanfwojg73k6r.onion/merged beowulf-updates main
+deb tor+http://devuanfwojg73k6r.onion/merged beowulf-security main
+deb tor+http://devuanfwojg73k6r.onion/devuan experimental main
+
+#deb-src tor+http://devuanfwojg73k6r.onion/merged beowulf main
+#deb-src tor+http://devuanfwojg73k6r.onion/merged beowulf-updates main
+#deb-src tor+http://devuanfwojg73k6r.onion/merged beowulf-security main
+#deb-src tor+http://devuanfwojg73k6r.onion/devuan experimental main
