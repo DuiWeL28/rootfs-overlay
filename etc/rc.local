@@ -13,7 +13,8 @@ echo "luther heads = NOPASSWD: /usr/local/lib/heads/heads-welcome" \
 
 wm=openbox
 for i in $(cat /proc/cmdline); do
-	[ "$i" = "awesome" ] && wm=awesome
+	[ "$i" = "dopia" ] && /usr/local/lib/heads/heads-net-switch vpn
+	[ "$i" = "dotor" ] && /usr/local/lib/heads/heads-net-switch tor
 done
 
 cp /usr/local/share/heads/$wm.xinitrc /home/luther/.xinitrc

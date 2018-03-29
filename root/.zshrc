@@ -3703,8 +3703,4 @@ alias sl="ls"
 alias ll="ls -laH --color=auto"
 alias l="ll"
 
-alias curl="curl --socks4a 127.0.0.1:9050"
-
 zrclocal
-
-

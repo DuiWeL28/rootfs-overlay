@@ -1,0 +1,3 @@
+#!/bin/sh
+grep -q ' dopia' /proc/cmdline && exec /usr/bin/curl "$@"
+exec /usr/bin/curl --socks4a 127.0.0.1:9050 "$@"

@@ -1,2 +1,3 @@
 #!/bin/sh
+grep -q ' dopia' /proc/cmdline && exec /usr/bin/sacc "$@"
 exec torsocks /usr/bin/sacc "$@"
