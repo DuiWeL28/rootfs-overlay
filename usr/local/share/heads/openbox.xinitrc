@@ -12,6 +12,7 @@ lxpanel &
 dunst &
 udiskie &
 pcmanfm --desktop &
+heads-brighttray &
 
 grep -q ' dopia' /proc/cmdline && /opt/pia/run.sh --startup &
 

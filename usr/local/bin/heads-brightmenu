@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Copyright (c) 2018 Ivan J. <parazyd@dyne.org>
+# See LICENSE file for copyright and license details.
+#
+
+if [ "$(pgrep -a heads-brightmenu | wc -l)" -ge 3 ]; then
+	exit 0
+fi
+
+yad \
+	--title "Screen Brightness" \
+	--form \
+	--center \
+	--width=640 \
+	--height=100 \
+	--columns=1 \
+	--fixed \
+	--borders=40 \
+	--field="Increase!/usr/share/icons/Adwaita/22x22/actions/list-add.png":FBTN \
+	--field="Decrease!/usr/share/icons/Adwaita/22x22/actions/list-remove.png":FBTN \
+	--button="OK":0 \
+	"xbacklight -inc 10" \
+	"xbacklight -dec 10"
