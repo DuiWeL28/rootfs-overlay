@@ -4,9 +4,27 @@
 # See LICENSE file for copyright and license details.
 #
 
-if [ "$(pgrep -a heads-brightmenu | wc -l)" -ge 3 ]; then
+if [ "$(pgrep -a heads-brightme | wc -l)" -ge 3 ]; then
 	exit 0
 fi
+
+/usr/local/bin/heads-brightctl
+case "$?" in
+	127)
+		yad \
+			--title "Screen Brightness" \
+			--form \
+			--center \
+			--width=640 \
+			--height=100 \
+			--columns=1 \
+			--fixed \
+			--borders=40 \
+			--text "No usable backlight subsystems found. Sorry." \
+			--button="OK":0
+		exit 0
+		;;
+esac
 
 yad \
 	--title "Screen Brightness" \
@@ -20,5 +38,5 @@ yad \
 	--field="Increase!/usr/share/icons/Adwaita/22x22/actions/list-add.png":FBTN \
 	--field="Decrease!/usr/share/icons/Adwaita/22x22/actions/list-remove.png":FBTN \
 	--button="OK":0 \
-	"xbacklight -inc 10" \
-	"xbacklight -dec 10"
+	"/usr/local/bin/sup heads-brightctl inc" \
+	"/usr/local/bin/sup heads-brightctl dec"

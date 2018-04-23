@@ -16,6 +16,9 @@ static struct rule_t rules[] = {
 
 	{ 1000, "heads-generate-debug", "/usr/local/bin/heads-generate-debug",
 		"$(sha256sum /usr/local/bin/heads-generate-debug | cut -d ' ' -f1)" },
+
+	{ 1000, "heads-brightctl", "/usr/local/bin/heads-brightctl",
+		"$(sha256sum /usr/local/bin/heads-brightctl | cut -d ' ' -f1)" },
 };
 EOF
 
