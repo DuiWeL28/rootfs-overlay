@@ -1,0 +1,246 @@
+#!/bin/sh
+#
+# Copyright (c) 2018 Ivan J. <parazyd@dyne.org>
+# See LICENSE file for copyright and license details.
+#
+
+yaddie() {
+	yad \
+		--title="Error" \
+		--text="$*" \
+		--borders=40 \
+		--center \
+		--fixed \
+		--no-escape \
+		--width=560 \
+		--height=180 \
+		--button="Exit":0
+	exit 1
+}
+
+usbdev="$(cut -c 1-8 < /usr/src/permakey/usbdev)"
+
+devs="$(find /dev -name 'sd?' | tr '\n' ',')"
+firstdevs="$(mktemp)"
+newdevs="$(mktemp)"
+find /dev -name 'sd??' > $firstdevs
+
+pdev="$(yad \
+	--title="Persistence Setup" \
+	--text="<big><b>Persistence Setup</b></big>
+This menu will guide you through setting up a persistence partition where you
+can keep your data. You will have to select a device where we will create the
+partition, and then choose how much space you wish to assign for it.
+
+Proceed by clicking the buttons in order to continue with the setup.
+
+Note: The USB device you are running this on is <b>$usbdev</b>
+"\
+	--center \
+	--fixed \
+	--no-escape \
+	--form \
+	--width=560 \
+	--height=320 \
+	--borders=40 \
+	--item-separator="," \
+	--separator="," \
+	--field="Select device for keeping data":CBE \
+	--button="Cancel":1 \
+	--button="<b>Proceed</b>":0 \
+	"$devs" | tr -d ',')"
+
+[ -n "$pdev" ] || exit 1
+
+freespace="$(parted -s $pdev unit MB "print free" \
+	| grep 'Free Space' | tail -n1 | awk '{print $3}' \
+	| tr -d '[A-Z]')"
+
+[ -z "$freespace" ] && {
+	yad \
+		--title="Error" \
+		--text="There is no free space to partition on the selected
+device." \
+		--borders=40 \
+		--center \
+		--fixed \
+		--no-escape \
+		--width=360 \
+		--height=120 \
+		--button="Go back":0
+	exec $(basename $0)
+}
+
+fullspace="$(fdisk -l $usbdev | sed 1q | awk '{print $7}')"
+endfirst="$(fdisk -l $usbdev | tail -n2 | sed 1q | awk '{print $5}')"
+
+# 300 MB gap (reason: the iso might get bigger)
+startpart="$(( $endfirst + 615000 ))"
+
+
+freespace="$(( $fullspace - $startpart ))"
+freespace="$(( $freespace * 512 / 1024 / 1024 ))"
+# sacrifice 2M to avoid a possible quirk
+freespace="$(( $freespace - 2 ))"
+
+[ "$freespace" -le 10 ] && {
+	yad \
+		--title="Error" \
+		--text="There is not enough free space to partition on the selected
+device." \
+		--borders=40 \
+		--center \
+		--fixed \
+		--no-escape \
+		--width=360 \
+		--height=120 \
+		--button="Go back":0
+	exec $(basename $0)
+}
+
+chosenspace="$(yad \
+	--title="Persistence Setup" \
+	--text="<big><b>Persistence Setup</b></big>
+Select the size of the persistence partition in MB:
+"\
+	--center \
+	--fixed \
+	--no-escape \
+	--width=560 \
+	--height=320 \
+	--borders=40 \
+	--scale \
+	--min-value=10 \
+	--max-value=$freespace \
+	--button="Cancel":1 \
+	--button="<b>Proceed</b>":0)"
+
+[ -n "$chosenspace" ] || exit 1
+
+passphrase="$(yad \
+	--title="Persistence Setup" \
+	--text="<big><b>Persistence Setup</b></big>
+Please type in the passphrase for your persistence partition.
+It will be used to encrypt and unlock your drive.
+"\
+	--center \
+	--fixed \
+	--no-escape \
+	--width=560 \
+	--height=180 \
+	--borders=40 \
+	--entry \
+	--button="Cancel":1 \
+	--button="<b>Proceed</b>":0)"
+
+[ -n "$passphrase" ] || exit 1
+
+yad \
+	--title="Persistence Setup" \
+	--text="<big><b>Persistence Setup</b></big>
+We got all the info we need. The setup will now continue. We will
+create a new partition out of your selected free space, create an encrypted LUKS
+container, and use your passphrase. Once done, it will be opened and mounted on
+top of your \$HOME. Any files that you place in your \$HOME further on, will be
+persistent and available for later use. You can load the persistence partition
+by using the welcome menu you can see upon booting.
+
+Press 'Proceed' to continue and be patient, there will be no information until
+the process is finished." \
+	--borders=40 \
+	--center \
+	--fixed \
+	--no-escape \
+	--width=560 \
+	--height=360 \
+	--button="<b>Proceed</b>":0
+
+
+# TODO: figure out how to leave 300-400 MB extra
+mkdir -p /tmp/heads-pers
+cat <<EOM | fdisk $usbdev 2>&1 >/tmp/heads-pers/fdisk.log
+n
+p
+
+$startpart
++${chosenspace}M
+w
+EOM
+
+[ $? = 0 ] || {
+	yaddie "<big><b>Persistence Setup</b></big>
+Something broke during partitioning. Please find the log in
+/tmp/heads-pers/fdisk.log and investigate or make a bug report.
+Apologies for the incovenience."
+}
+
+partprobe $usbdev
+
+yad \
+	--title="Persistence Setup" \
+	--text="<big><b>Persistence Setup</b></big>
+Partitioning was successful.
+Proceed to create and open an encrypted container." \
+	--borders=40 \
+	--center \
+	--fixed \
+	--no-escape \
+	--width=560 \
+	--height=180 \
+	--button="<b>Proceed</b>":0
+
+
+find /dev -name 'sd??' > $newdevs
+newpart="$(diff $firstdevs $newdevs | tail -n1 | awk '{print $2}')"
+
+printf "%s" "$passphrase" | cryptsetup luksFormat $newpart 2>&1 >/tmp/heads-pers/luksformat.log
+[ $? = 0 ] || {
+	yaddie "<big><b>Persistence Setup</b></big>
+Something broke during creating the encrypted container. Please find the log in
+/tmp/heads-pers/luksformat.log and investigate or make a bug report.
+Apologies for the incovenience."
+}
+
+printf "%s" "$passphrase" | cryptsetup luksOpen $newpart headspers 2>&1 >/tmp/heads-pers/luksopen.log
+[ $? = 0 ] || {
+	yaddie "<big><b>Persistence Setup</b></big>
+Something broke during opening the encrypted container. Please find the log in
+/tmp/heads-pers/luksformat.log and investigate or make a bug report.
+Apologies for the incovenience."
+}
+
+mkfs.btrfs -f /dev/mapper/headspers 2>&1 >/tmp/heads-pers/mkfsbtrfs.log
+[ $? = 0 ] || {
+	yaddie "Something went wrong during formatting the container. Please find
+the log in /tmp/heads-pers/mkfsbtrfs.log and investigate or make a bug report.
+Apologies for the incovenience."
+}
+
+mkdir -p /media/headspers
+mount -t btrfs /dev/mapper/headspers /media/headspers
+mkdir -p /media/headspers/upper /media/headspers/work
+
+# maybe drop a file now in /media/pers for identification
+
+mount -t overlay -o \
+	lowerdir=/home/luther,upperdir=/media/headspers/upper,workdir=/media/headspers/work \
+	overlay /home/luther
+
+yad \
+	--title="Persistence Setup" \
+	--text="<big><b>Persistence Setup</b></big>
+The persistence container creation was successful! It has already been mounted
+for you and from now, the data you place in your \$HOME will persist across
+reboots. To load the persistent partition on your next boot, select the
+checkbox on the welcome menu.
+
+Click on Finish to exit." \
+	--borders=40 \
+	--center \
+	--fixed \
+	--no-escape \
+	--width=560 \
+	--height=180 \
+	--button="<b>Finish</b>":0
+
+rm -f $firstdevs $newdevs
