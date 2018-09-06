@@ -13,7 +13,7 @@ dunst &
 udiskie &
 pcmanfm --desktop &
 heads-brighttray &
-pasystray &
+#pasystray &
 
 grep -q ' dopia' /proc/cmdline && /opt/pia/run.sh --startup &
 
